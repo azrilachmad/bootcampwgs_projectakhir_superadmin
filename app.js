@@ -7,7 +7,9 @@ const flash = require("express-flash");
 const passport = require("passport");
 const { pool } = require("./dbCon");
 const bcrypt = require("bcrypt");
-const path = require('path');
+const path = require("path");
+
+const fs = require("fs");
 
 const app = express();
 const port = 3000;
@@ -16,28 +18,30 @@ const port = 3000;
 // User Static File (Build in middleware)
 app.use(express.static("public"));
 
-
-const multer = require('multer')
+const multer = require("multer");
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, './public/images/products')
+    cb(null, "./public/images/products");
   },
   filename: function (req, file, cb) {
-    console.log(file)
-    cb(null, `item_image-${Date.now()}` + path.extname(file.originalname))
-  }
-})
+    console.log(file);
+    cb(null, `item_image-${Date.now()}` + path.extname(file.originalname));
+  },
+});
 
 const fileFilter = (req, file, cb) => {
-  if(file.mimetype === 'image/png' || file.mimetype === 'image/jpg' || file.mimetype === 'image/jpeg'){
-    cb(null, true)
-  }else{
-    cb(null, false)
+  if (
+    file.mimetype === "image/png" ||
+    file.mimetype === "image/jpg" ||
+    file.mimetype === "image/jpeg"
+  ) {
+    cb(null, true);
+  } else {
+    cb(null, false);
   }
-}
-const upload = multer({ storage: storage, fileFilter:fileFilter })
-
+};
+const upload = multer({ storage: storage, fileFilter: fileFilter });
 
 const initializePassport = require("./passportCon");
 
@@ -58,7 +62,6 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-
 app.use(
   express.urlencoded({
     extended: true,
@@ -76,7 +79,7 @@ app.get("/", checkAuthenticated, (req, res) => {
 });
 
 // User Session
-app.get("/users/dashboard", checkNotAuthenticated, (req, res) => {
+app.get("/admin/dashboard", checkNotAuthenticated, (req, res) => {
   res.render("dashboard", {
     title: "Dashboard",
     layout: "layouts/main-layout",
@@ -86,7 +89,7 @@ app.get("/users/dashboard", checkNotAuthenticated, (req, res) => {
 });
 
 // Page Item List
-app.get("/users/item-list", checkNotAuthenticated, (req, res) => {
+app.get("/admin/item-list", checkNotAuthenticated, (req, res) => {
   const sql = `SELECT * FROM items ORDER BY id`;
   pool.query(sql, [], (err, results) => {
     if (err) {
@@ -102,7 +105,7 @@ app.get("/users/item-list", checkNotAuthenticated, (req, res) => {
 });
 
 // Add Item Page
-app.get("/users/item-list/add", checkNotAuthenticated, (req, res) => {
+app.get("/admin/item-list/add", checkNotAuthenticated, (req, res) => {
   res.render("add-item", {
     title: "Add Product",
     layout: "layouts/main-layout",
@@ -110,7 +113,7 @@ app.get("/users/item-list/add", checkNotAuthenticated, (req, res) => {
 });
 
 // Page Item Detail
-app.get("/users/item-list/:item_name", checkNotAuthenticated, (req, res) => {
+app.get("/admin/item-list/:item_name", checkNotAuthenticated, (req, res) => {
   const sql = `SELECT * FROM items where item_name = '${req.params.item_name}'`;
   pool.query(sql, (err, results) => {
     if (err) {
@@ -126,7 +129,7 @@ app.get("/users/item-list/:item_name", checkNotAuthenticated, (req, res) => {
 });
 
 // User list page
-app.get("/users/user-list", checkNotAuthenticated, (req, res) => {
+app.get("/admin/user-list", checkNotAuthenticated, (req, res) => {
   const sql = `SELECT * FROM users ORDER BY username`;
   pool.query(sql, [], (err, results) => {
     if (err) {
@@ -141,9 +144,8 @@ app.get("/users/user-list", checkNotAuthenticated, (req, res) => {
   });
 });
 
-
 // Page User Detail
-app.get("/users/user-list/:username", checkNotAuthenticated, (req, res) => {
+app.get("/admin/user-list/:username", checkNotAuthenticated, (req, res) => {
   const sql = `SELECT * FROM users where username = '${req.params.username}'`;
   pool.query(sql, (err, results) => {
     if (err) {
@@ -157,36 +159,35 @@ app.get("/users/user-list/:username", checkNotAuthenticated, (req, res) => {
   });
 });
 
-
 // Add User
-app.get("/users/addUser", checkNotAuthenticated, (req, res) => {
+app.get("/admin/addUser", checkNotAuthenticated, (req, res) => {
   res.render("addUser", {
     title: "Add User",
     layout: "layouts/main-layout",
   });
 });
 
-app.get("/users/logout", checkNotAuthenticated, (req, res, next) => {
+app.get("/logout", checkNotAuthenticated, (req, res, next) => {
   req.logout(function (err) {
     if (err) {
       return next(err);
     }
-    req.flash("success", "User logged out");
+    req.flash("success", `Success logged out`);
     res.redirect("/");
   });
 });
 
 app.post(
-  "/users/login",
+  "/admin/login",
   passport.authenticate("local", {
-    successRedirect: "/users/dashboard",
+    successRedirect: "/admin/dashboard",
     failureRedirect: "/",
     failureFlash: true,
     successFlash: true,
   })
 );
 
-app.post("/users/addUser", checkNotAuthenticated, async (req, res) => {
+app.post("/admin/addUser", checkNotAuthenticated, async (req, res) => {
   const { username, password, role, password2 } = req.body;
 
   console.log({
@@ -246,7 +247,7 @@ app.post("/users/addUser", checkNotAuthenticated, async (req, res) => {
               }
               console.log(result.rows);
               req.flash("success", "Successfully created a new user");
-              res.redirect("/users/dashboard");
+              res.redirect("/admin/dashboard");
             }
           );
         }
@@ -255,94 +256,94 @@ app.post("/users/addUser", checkNotAuthenticated, async (req, res) => {
   }
 });
 
-app.post("/users/item-list/add", checkNotAuthenticated, upload.array('img', 1), async (req, res) => {
-  let img  
-  if (!req.files.find(e => e.filename)){
-    img = 'default.jpg'
-  }else{
-    img  = req.files[0].filename
-  }
-  const item_name = req.body.item_name
-  const category = req.body.category 
-  const price = req.body.price
-  const quantity = req.body.quantity 
-  console.log({
-    item_name,
-    category,
-    price,
-    quantity,
-    img
-  });
-
-  const errors = [];
-
-  
-
-  
-  if (img === undefined) {
-    errors.push({ message: "Please insert an image" });
-  }
-  if (category === undefined) {
-    errors.push({ message: "Please select a category" });
-  }
-
-  if (quantity < 0 || quantity === "") {
-    errors.push({ message: "Invalid amount of quantity" });
-  }
-
-  if (price < 0 || quantity === "") {
-    errors.push({ message: "Invalid amount of price" });
-  }
-
-  if (errors.length > 0) {
-    res.render("add-item", {
-      errors,
-      layout: "layouts/main-layout",
-      title: "Add Item",
-      params: req.body,
+app.post(
+  "/admin/item-list/add",
+  checkNotAuthenticated,
+  upload.array("img", 1),
+  async (req, res) => {
+    let img;
+    if (!req.files.find((e) => e.filename)) {
+      img = "default.jpg";
+    } else {
+      img = req.files[0].filename;
+    }
+    const item_name = req.body.item_name;
+    const category = req.body.category;
+    const price = req.body.price;
+    const quantity = req.body.quantity;
+    console.log({
+      item_name,
+      category,
+      price,
+      quantity,
+      img,
     });
-  } else {
-    pool.query(
-      `SELECT * FROM items WHERE item_name = $1`,
-      [item_name.toLowerCase()],
-      (err, results) => {
-        if (err) {
-          throw err;
-        }
-        console.log(results.rows);
 
-        if (results.rows.length > 0) {
-          errors.push({ message: "Product name already exists" });
-          res.render("add-item", {
-            errors, 
-            layout: "layouts/main-layout",
-            title: "Add Item",
-            params: req.body,
-          });
-        } else {
-          const product = item_name.toLowerCase();
-          pool.query(
-            "INSERT INTO items (item_name, category, price, quantity, item_image) VALUES ($1, $2, $3, $4, $5) RETURNING id",
-            [product, category, price, quantity, img],
-            (err, results) => {
-              if (err) {
-                throw err;
+    const errors = [];
+
+    if (img === undefined) {
+      errors.push({ message: "Please insert an image" });
+    }
+    if (category === undefined) {
+      errors.push({ message: "Please select a category" });
+    }
+
+    if (quantity < 0 || quantity === "") {
+      errors.push({ message: "Invalid amount of quantity" });
+    }
+
+    if (price < 0 || quantity === "") {
+      errors.push({ message: "Invalid amount of price" });
+    }
+
+    if (errors.length > 0) {
+      res.render("add-item", {
+        errors,
+        layout: "layouts/main-layout",
+        title: "Add Item",
+        params: req.body,
+      });
+    } else {
+      pool.query(
+        `SELECT * FROM items WHERE item_name = $1`,
+        [item_name.toLowerCase()],
+        (err, results) => {
+          if (err) {
+            throw err;
+          }
+          console.log(results.rows);
+
+          if (results.rows.length > 0) {
+            errors.push({ message: "Product name already exists" });
+            res.render("add-item", {
+              errors,
+              layout: "layouts/main-layout",
+              title: "Add Item",
+              params: req.body,
+            });
+          } else {
+            const product = item_name.toLowerCase();
+            pool.query(
+              "INSERT INTO items (item_name, category, price, quantity, item_image) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+              [product, category, price, quantity, img],
+              (err, results) => {
+                if (err) {
+                  throw err;
+                }
+                console.log(results.rows);
+                req.flash("success", "Successfully create a product");
+                res.redirect("/admin/item-list");
               }
-              console.log(results.rows);
-              req.flash("success", "Successfully create a product");
-              res.redirect("/users/item-list");
-            }
-          );
+            );
+          }
         }
-      }
-    );
+      );
+    }
   }
-});
-
-
+);
 
 // Edit data product
-app.get("/users/item-list/edit/:item_name", (req, res) => {
+app.get("/admin/item-list/edit/:item_name", (req, res) => {
   const sql = `SELECT * FROM items where item_name = '${req.params.item_name}'`;
   pool.query(sql, (err, result) => {
     if (err) {
@@ -356,131 +357,114 @@ app.get("/users/item-list/edit/:item_name", (req, res) => {
   });
 });
 
-
-app.post("/users/item-list/update", checkNotAuthenticated, upload.array('img', 1), async (req, res) => {
-  let img  
-  if (!req.files.find (e => e.filename)){
-    img = 'default.jpg'
-  }else{
-    img  = req.files[0].filename
-  }
-  const item_name = req.body.item_name
-  const category = req.body.category 
-  const price = req.body.price
-  const quantity = req.body.quantity 
-  const oldName = req.body.oldName
-  console.log({
-    oldName,
-    item_name,
-    category,
-    price,
-    quantity,
-    img
-  });
-
-  const errors = [];
-
-  
-  if (img === undefined) {
-    errors.push({ message: "Please insert an image" });
-  }
-  if (category === undefined) {
-    errors.push({ message: "Please select a category" });
-  }
-
-  if (quantity < 0 || quantity === "") {
-    errors.push({ message: "Invalid amount of quantity" });
-  }
-
-  if (price < 0 || quantity === "") {
-    errors.push({ message: "Invalid amount of price" });
-  }
-
-  if (errors.length > 0) {
-    res.render("add-item", {
-      errors,
-      layout: "layouts/main-layout",
-      title: "Add Item",
-      params: req.body,
+app.post(
+  "/admin/item-list/update",
+  checkNotAuthenticated,
+  upload.array("img", 1),
+  async (req, res) => {
+    let img;
+    if (!req.files.find((e) => e.filename)) {
+      img = "default.jpg";
+    } else {
+      img = req.files[0].filename;
+    }
+    const item_name = req.body.item_name;
+    const category = req.body.category;
+    const price = req.body.price;
+    const quantity = req.body.quantity;
+    const oldName = req.body.oldName;
+    console.log({
+      oldName,
+      item_name,
+      category,
+      price,
+      quantity,
+      img,
     });
-  } else {
+
+    const errors = [];
+
+    if (img === undefined) {
+      errors.push({ message: "Please insert an image" });
+    }
+    if (category === undefined) {
+      errors.push({ message: "Please select a category" });
+    }
+
+    if (quantity < 0 || quantity === "") {
+      errors.push({ message: "Invalid amount of quantity" });
+    }
+
+    if (price < 0 || quantity === "") {
+      errors.push({ message: "Invalid amount of price" });
+    }
+
+    if (errors.length > 0) {
+      res.render("add-item", {
+        errors,
+        layout: "layouts/main-layout",
+        title: "Add Item",
+        params: req.body,
+      });
+    } else {
+      pool.query(
+        `SELECT * FROM items WHERE item_name = $1`,
+        [item_name],
+        (err, results) => {
+          if (err) {
+            throw err;
+          } else {
+            console.log(results.rows);
+            const product = item_name;
+            pool.query(
+              `UPDATE items SET item_name = '${product}', category = '${category}', price = '${price}', quantity = '${quantity}', item_image = '${img}' WHERE item_name='${oldName}'; `,
+              (err, results) => {
+                if (err) {
+                  throw err;
+                }
+                console.log(results.rows);
+                req.flash("success", "Successfully create a product");
+                res.redirect("/admin/item-list");
+              }
+            );
+          }
+        }
+      );
+    }
+  }
+);
+
+// Delete Product
+app.get(
+  "/admin/item-list/delete/:item_name",
+  checkNotAuthenticated,
+  (req, res) => {
+    const item = req.params.item_name;
     pool.query(
-      `SELECT * FROM items WHERE item_name = $1`,
-      [item_name],
+      `SELECT item_name FROM items where item_name = '${item}'`,
       (err, results) => {
         if (err) {
           throw err;
         }
-        console.log(results.rows);
-
-        if (results.rows.length > 0) {
-          errors.push({ message: "Product name already exists" });
-          res.render("add-item", {
-            errors, 
-            layout: "layouts/main-layout",
-            title: "Add Item",
-            params: req.body,
-          });
+        if (results.rows.length < 1) {
+          req.flash("error", "Product not found");
+          res.redirect("/admin/item-list");
         } else {
-          const product = item_name
-          pool.query(
-            `UPDATE items SET item_name = '${product}', category = '${category}', price = '${price}', quantity = '${quantity}', item_image = '${img}' WHERE item_name='${oldName}'; `,
-            (err, results) => {
-              if (err) {
-                throw err;
-              }
+          const sql = `DELETE FROM items where item_name = '${item}'`;
+          pool.query(sql, (err, result) => {
+            if (err) {
+              return console.error(err.message);
+            } else {
               console.log(results.rows);
-              req.flash("success", "Successfully create a product");
-              res.redirect("/users/item-list");
+              req.flash("success", "Successfully Delete a product");
+              res.redirect("/admin/item-list");
             }
-          );
+          });
         }
       }
     );
   }
-});
-
-
-
-// Delete Product 
-app.get("/users/item-list/delete/:item_name", checkNotAuthenticated, (req, res) => {
-  const name = req.params.item_name;
-  const check = `SELECT item_name FROM items WHERE item_name = '${name}'`;
-  const sql = `DELETE FROM items WHERE item_name = '${name}'`;
-  console.log(check)
-
-  pool.query(sql, (err, result) => {
-    function capitalizeTheFirstLetterOfEachWord(words) {
-      var separateWord = words.toLowerCase().split(' '); 
-        for (var i = 0; i < separateWord.length; i++) { 
-          separateWord[i] = separateWord[i].charAt(0).toUpperCase() + separateWord[i].substring(1);
-        } 
-       return separateWord.join(' ');
-    }   
-
-    if (err) {
-      res.send(err.message);
-    }
-    if (!name) {
-      res.status(404).send("<h1>404</h1>");
-    }
-    if (name !== sql) {
-
-      req.flash("msg", `Product ${capitalizeTheFirstLetterOfEachWord(req.params.item_name)} has been deleted`);
-      res.redirect("/users/item-list");
-      
-    } else if (req.params.name === sql) {
-      res.render("item-list", {
-        title: "Item List",
-        layout: "layouts/main-layout",
-        model: result.rows[0],
-      });
-    }
-  });
-});
-
-
-
+);
 
 app.use("/", (req, res) => {
   res.status(404);
@@ -489,7 +473,7 @@ app.use("/", (req, res) => {
 
 function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
-    return res.redirect("/users/dashboard");
+    return res.redirect("/admin/dashboard");
   }
   next();
 }

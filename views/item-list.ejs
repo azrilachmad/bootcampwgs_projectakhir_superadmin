@@ -13,28 +13,14 @@
 </div>
 <% } %> 
 
-      <% if (!model) { %>
-      <div class="alert alert-danger fw-bold" role="alert">
-        list item not found.
-        <a href="/users/item-list" class="alert-link fw-light"
-          ><br />Back to item list.</a>
-      </div>
-      <% } else {%>
-        <% if (msg.length !== 0) { %>
-          <div class="alert alert-success fw-bold" role="alert">
-            <%= msg %> 
-          </div>
-          <% } %>
-
 
       <% if (messages.error) { %>
-        <div class="alert alert-danger" role="alert">
-          <ul>
-            <li><%= erros %></li>
+      <div class="alert alert-danger" role="alert">
+        <ul>
+          <li><%= messages.error %></li>
           </ul>
-        </div>
-        <% } %>
-        <% } %> 
+          </div>
+          <% } %>
 
 
       <% if (model.length < 1 || model.length === null || model.length === undefined) { %>
@@ -74,7 +60,7 @@
                     <td>
                         <a
                         class="btn btn-success badge rounded-pill"
-                        href="/users/item-list/<%= items.item_name %>"
+                        href="/admin/item-list/<%= items.item_name %>"
                         role="button"
                         >Detail</a
                         >
@@ -85,7 +71,7 @@
     </table>
     <% } %> 
 
-      <a class="btn btn-primary" href="/users/item-list/add" role="button"
+      <a class="btn btn-primary" href="/admin/item-list/add" role="button"
         >Add Items</a
       >
     </div>
