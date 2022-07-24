@@ -1,0 +1,93 @@
+<div class="container">
+  <div class="row">
+    <div class="col-md-8">
+      <h2>Product List :</h2>
+
+      <% if (messages.success) { %>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <strong><%= messages.success %>
+          </strong>
+          <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+<% } %> 
+
+      <% if (!model) { %>
+      <div class="alert alert-danger fw-bold" role="alert">
+        list item not found.
+        <a href="/users/item-list" class="alert-link fw-light"
+          ><br />Back to item list.</a>
+      </div>
+      <% } else {%>
+        <% if (msg.length !== 0) { %>
+          <div class="alert alert-success fw-bold" role="alert">
+            <%= msg %> 
+          </div>
+          <% } %>
+
+
+      <% if (messages.error) { %>
+        <div class="alert alert-danger" role="alert">
+          <ul>
+            <li><%= erros %></li>
+          </ul>
+        </div>
+        <% } %>
+        <% } %> 
+
+
+      <% if (model.length < 1 || model.length === null || model.length === undefined) { %>
+        <div class="alert alert-danger fw-bold" role="alert">
+         Data Items not found 
+        </div>
+
+        
+        <% } else {%>
+      <table class="table table-hover">
+        <thead>
+          <tr class="table table-primary">
+            <th scope="col">No.</th>
+            <th scope="col">Product Name</th>
+            <th scope="col">Category</th>
+            <th scope="col">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+            <% let i = 1 %> 
+
+            <% function capitalizeTheFirstLetterOfEachWord(words) {%> 
+              <% var separateWord = words.toLowerCase().split(' '); %>
+                <% for (var i = 0; i < separateWord.length; i++) { %>
+                  <%separateWord[i] = separateWord[i].charAt(0).toUpperCase() + separateWord[i].substring(1);%>
+                <% } %> 
+              <%  return separateWord.join(' ');%> 
+            <% } %>  
+
+
+            <% for( const items of model) { %>
+                <tr class="table table-secondary">
+                    <th scope="row"><%= i %> </th>
+                    <% i++ %> 
+                    <td><%= capitalizeTheFirstLetterOfEachWord(items.item_name) %> </td>
+                    <td><%= items.category %> </td>
+                    <td>
+                        <a
+                        class="btn btn-success badge rounded-pill"
+                        href="/users/item-list/<%= items.item_name %>"
+                        role="button"
+                        >Detail</a
+                        >
+                    </td>
+                </tr>
+                <% } %>
+        </tbody>
+    </table>
+    <% } %> 
+
+      <a class="btn btn-primary" href="/users/item-list/add" role="button"
+        >Add Items</a
+      >
+    </div>
+  </div>
+</div>
