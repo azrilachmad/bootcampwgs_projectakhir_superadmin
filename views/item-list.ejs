@@ -70,10 +70,11 @@
         </tbody>
     </table>
     <% } %> 
-
+    <% if (userRole === 'admin') { %>
       <a class="btn btn-primary" href="/admin/item-list/add" role="button"
         >Add Items</a
       >
+      <% } %> 
     </div>
   </div>
 </div>

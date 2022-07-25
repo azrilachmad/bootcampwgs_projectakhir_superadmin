@@ -8,6 +8,7 @@ const passport = require("passport");
 const { pool } = require("./dbCon");
 const bcrypt = require("bcrypt");
 const path = require("path");
+const moment = require("moment");
 
 const fs = require("fs");
 
@@ -79,7 +80,7 @@ app.get("/", checkAuthenticated, (req, res) => {
 });
 
 // User Session
-app.get("/admin/dashboard", checkNotAuthenticated, (req, res) => {
+app.get("/admin/dashboard", checkNotAuthenticated, isUser, (req, res) => {
   res.render("dashboard", {
     title: "Dashboard",
     layout: "layouts/main-layout",
@@ -89,7 +90,7 @@ app.get("/admin/dashboard", checkNotAuthenticated, (req, res) => {
 });
 
 // Page Item List
-app.get("/admin/item-list", checkNotAuthenticated, (req, res) => {
+app.get("/admin/item-list", checkNotAuthenticated, isUser, (req, res) => {
   const sql = `SELECT * FROM items ORDER BY id`;
   pool.query(sql, [], (err, results) => {
     if (err) {
@@ -100,6 +101,8 @@ app.get("/admin/item-list", checkNotAuthenticated, (req, res) => {
       layout: "layouts/main-layout",
       msg: req.flash("msg"),
       model: results.rows,
+      username: req.user.username,
+      userRole: req.user.role,
     });
   });
 });
@@ -113,7 +116,7 @@ app.get("/admin/item-list/add", checkNotAuthenticated, (req, res) => {
 });
 
 // Page Item Detail
-app.get("/admin/item-list/:item_name", checkNotAuthenticated, (req, res) => {
+app.get("/admin/item-list/:item_name", checkNotAuthenticated, isUser, (req, res) => {
   const sql = `SELECT * FROM items where item_name = '${req.params.item_name}'`;
   pool.query(sql, (err, results) => {
     if (err) {
@@ -124,6 +127,8 @@ app.get("/admin/item-list/:item_name", checkNotAuthenticated, (req, res) => {
       layout: "layouts/main-layout",
       model: results.rows[0],
       msg: req.flash("msg"),
+      username: req.user.username,
+      userRole: req.user.role,
     });
   });
 });
@@ -168,13 +173,30 @@ app.get("/admin/addUser", checkNotAuthenticated, (req, res) => {
 });
 
 app.get("/logout", checkNotAuthenticated, (req, res, next) => {
-  req.logout(function (err) {
-    if (err) {
-      return next(err);
+  pool.query(
+    `SELECT * FROM users WHERE username = $1`,
+    [req.user.username],
+    (err, results) => {
+      if (err) {
+        throw err;
+      }
+      pool.query(
+        `INSERT INTO public.log_app(id_user, username, activity) VALUES (${results.rows[0].id}, '${results.rows[0].username}' ,'logout')`,
+        (err, results) => {
+          if (err) {
+            throw err;
+          }
+        }
+      );
+      req.logout(function (err) {
+        if (err) {
+          return next(err);
+        }
+        req.flash("success", `Success logged out`);
+        res.redirect("/");
+      });
     }
-    req.flash("success", `Success logged out`);
-    res.redirect("/");
-  });
+  );
 });
 
 app.post(
@@ -330,9 +352,18 @@ app.post(
                 if (err) {
                   throw err;
                 }
-                console.log(results.rows);
-                req.flash("success", "Successfully create a product");
-                res.redirect("/admin/item-list");
+                pool.query(
+                  "INSERT INTO product_history (date , product_name, details, quantity, category) VALUES (NOW(), $1, $2, $3, $4) RETURNING id",
+                  [product, "Product In", quantity, category],
+                  (err, result) => {
+                    if (err) {
+                      throw err;
+                    }
+                    console.log(results.rows);
+                    req.flash("success", "Successfully create a product");
+                    res.redirect("/admin/item-list");
+                  }
+                );
               }
             );
           }
@@ -372,7 +403,12 @@ app.post(
     const category = req.body.category;
     const price = req.body.price;
     const quantity = req.body.quantity;
+
     const oldName = req.body.oldName;
+    const oldCategory = req.body.oldCategory;
+    const oldPrice = req.body.oldPrice;
+    const oldQuantity = req.body.oldQuantity;
+    const oldItemImage = req.body.oldItemImage;
     console.log({
       oldName,
       item_name,
@@ -441,7 +477,7 @@ app.get(
   (req, res) => {
     const item = req.params.item_name;
     pool.query(
-      `SELECT item_name FROM items where item_name = '${item}'`,
+      `SELECT * FROM items where item_name = '${item}'`,
       (err, results) => {
         if (err) {
           throw err;
@@ -450,21 +486,52 @@ app.get(
           req.flash("error", "Product not found");
           res.redirect("/admin/item-list");
         } else {
-          const sql = `DELETE FROM items where item_name = '${item}'`;
-          pool.query(sql, (err, result) => {
-            if (err) {
-              return console.error(err.message);
-            } else {
-              console.log(results.rows);
-              req.flash("success", "Successfully Delete a product");
-              res.redirect("/admin/item-list");
+          pool.query(
+            "INSERT INTO product_history (date , product_name, details, quantity, category) VALUES (NOW(), $1, $2, $3, $4) RETURNING id",
+            [
+              item,
+              "Product Removed",
+              results.rows[0].quantity,
+              results.rows[0].category,
+            ],
+            (err, result) => {
+              if (err) {
+                return console.error(err.message);
+              }
+              const sql = `DELETE FROM items where item_name = '${item}'`;
+              pool.query(sql, (err, result) => {
+                if (err) {
+                  return console.error(err.message);
+                } else {
+                  console.log(results.rows);
+                  req.flash("success", "Successfully Delete a product");
+                  res.redirect("/admin/item-list");
+                }
+              });
             }
-          });
+          );
         }
       }
     );
   }
 );
+
+// Page Item Listtory
+app.get("/admin/item-history", checkNotAuthenticated, (req, res) => {
+  const sql = `SELECT *  FROM product_history ORDER BY id `;
+  pool.query(sql, [], (err, results) => {
+    if (err) {
+      return console.error(err.message);
+    }
+    res.render("item-history", {
+      title: "Item List",
+      layout: "layouts/main-layout",
+      msg: req.flash("msg"),
+      model: results.rows,
+      moment,
+    });
+  });
+});
 
 app.use("/", (req, res) => {
   res.status(404);
@@ -483,6 +550,20 @@ function checkNotAuthenticated(req, res, next) {
     return next();
   }
   res.redirect("/");
+}
+
+function isAdmin(req, res, next) {
+  if (req.user.role === "admin") {
+    return next();
+  }
+  res.redirect("/error");
+}
+
+function isUser(req, res, next) {
+  if (req.user.role === "user" || req.user.role === "admin") {
+    return next();
+  }
+  res.redirect("/error");
 }
 
 app.listen(port, () => {

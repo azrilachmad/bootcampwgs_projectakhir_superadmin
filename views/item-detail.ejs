@@ -32,8 +32,10 @@
             <h6 class="card-subtitle mt-3"><b>Stock Left: </b> <%= model.quantity %> </h6>
             <p class="card-text"><b>Price: </b><%= new Intl.NumberFormat('en-US', { style: 'currency', currency: 'IDR', maximumFractionDigits:0}).format(model.price).replace(/,/g, '.') %> </p>
             <a class="btn btn-primary badge rounded-pill" href="/admin/item-list " role="button">Back</a>
+            <% if (userRole === 'admin') { %>
             <a class="btn btn-warning badge rounded-pill" href="/admin/item-list/edit/<%= model.item_name %>" role="button">Edit</a>
             <a onclick="return confirm('Are you sure?')" class="btn btn-danger badge rounded-pill" href="/admin/item-list/delete/<%= model.item_name %>" role="button">Delete</a>
+              <% } %> 
           </div>
         </div>
         <% } %> 

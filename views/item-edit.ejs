@@ -1,98 +1,99 @@
 <div class="container mt-3">
-    <div class="row">
-      <div class="col-md-6">
-        <h2>Edit Product Data</h2>
-  
-        <% if (typeof errors != 'undefined') { %>
-        <div class="alert alert-danger" role="alert">
-          <ul>
-            <% errors.forEach(error => { %>
-            <li><%= error.msg %></li>
-            <% }) %>
-          </ul>
-        </div>
-        <% } %> <% if (!model) { %>
-        <div class="alert alert-danger fw-bold" role="alert">
-          User not found.
-          <a href="/contact" class="alert-link fw-light"
-            ><br />Back to contact list.</a
-          >
-        </div>
-        <% } else {%>
-        <form method="post" action="/admin/item-list/update" enctype="multipart/form-data">
+  <div class="row">
+    <div class="col-md-6">
+      <h2>Edit Product Data</h2>
+
+      <% if (typeof errors != 'undefined') { %>
+      <div class="alert alert-danger" role="alert">
+        <ul>
+          <% errors.forEach(error => { %>
+          <li><%= error.msg %></li>
+          <% }) %>
+        </ul>
+      </div>
+      <% } %> <% if (!model) { %>
+      <div class="alert alert-danger fw-bold" role="alert">
+        User not found.
+        <a href="/contact" class="alert-link fw-light"
+          ><br />Back to contact list.</a
+        >
+      </div>
+      <% } else {%>
+      <form
+        method="post"
+        action="/admin/item-list/update"
+        enctype="multipart/form-data"
+      >
+        <input type="hidden" name="oldName" value="<%= model.item_name %>" />
+        <input type="hidden" name="oldCategory" value="<%= model.category%>" />
+        <input type="hidden" name="oldPrice" value="<%= model.price %>" />
+        <input type="hidden" name="oldQuantity" value="<%= model.quantity %>" />
+        <input type="hidden" name="oldItemImage" value="<%= model.item_image %>" />
+        <div class="mb-3">
+          <label for="name" class="form-label">Product Name :</label>
           <input
-            type="hidden"
-            name="oldName"
+            type="text"
+            class="form-control"
+            id="item_name"
+            name="item_name"
+            required
             value="<%= model.item_name %>"
           />
+        </div>
+        <fieldset>
           <div class="mb-3">
-            <label for="name" class="form-label">Product Name :</label>
-            <input
-              type="text"
-              class="form-control"
-              id="item_name"
-              name="item_name"
-              required
-              value="<%= model.item_name %>"
-            />
+            <label for="select" class="form-label">Product Category</label>
+            <select id="select" class="form-select" name="category">
+              <% if( model.category === 'jacket') { %>
+              <option disabled>Select Category</option>
+              <option selected value="jacket">Jacket</option>
+              <option value="shoes">Shoes</option>
+              <option value="tshirt">T-Shirt</option>
+              <% } %> <% if( model.category === 'shoes') { %>
+              <option disabled>Select Category</option>
+              <option value="jacket">Jacket</option>
+              <option selected value="shoes">Shoes</option>
+              <option value="tshirt">T-Shirt</option>
+              <% } %> <% if( model.category === 'tshirt') { %>
+              <option disabled>Select Category</option>
+              <option value="jacket">Jacket</option>
+              <option value="shoes">Shoes</option>
+              <option selected value="tshirt">T-Shirt</option>
+              <% } %>
+            </select>
           </div>
-          <fieldset>
-            <div class="mb-3">
-              <label for="select" class="form-label">Product
-                Category</label>
-              <select id="select" class="form-select"
-                name="category">
-                <% if( model.category === 'jacket') { %>
-                    <option disabled>Select Category</option>
-                    <option selected value="jacket">Jacket</option>
-                    <option value="shoes">Shoes</option>
-                    <option value="tshirt">T-Shirt</option>
-                <% } %>  
-                <% if( model.category === 'shoes') { %>
-                    <option disabled>Select Category</option>
-                    <option value="jacket">Jacket</option>
-                    <option selected value="shoes">Shoes</option>
-                    <option value="tshirt">T-Shirt</option>
-                <% } %>  
-                <% if( model.category === 'tshirt') { %>
-                    <option disabled>Select Category</option>
-                    <option value="jacket">Jacket</option>
-                    <option value="shoes">Shoes</option>
-                    <option selected value="tshirt">T-Shirt</option>
-                <% } %>  
-              </select>
-            </div>
-          </fieldset>
-          <div class="mb-3">
-            <label for="price" class="form-label">Price :</label>
-            <input type="number" class="form-control"
-              id="price" name="price" value="<%=
-              model.price %>">
-          </div>
-          <div class="mb-3">
-            <label for="quantity" class="form-label">Quantity
-              :</label>
-            <input type="number" class="form-control"
-              id="quantity" name="quantity" value="<%=
-              model.quantity %>">
-          </div>
-          <div class="mb-3">
-            <label for="item_image" class="form-label">Image
-              :</label>
-              <input type="file" class="form-control"
-                id="item_image" name="img">
-            </div>
+        </fieldset>
+        <div class="mb-3">
+          <label for="price" class="form-label">Price :</label>
+          <input
+            type="number"
+            class="form-control"
+            id="price"
+            name="price"
+            value="<%=
+              model.price %>"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="quantity" class="form-label">Quantity :</label>
+          <input
+            type="number"
+            class="form-control"
+            id="quantity"
+            name="quantity"
+            value="<%=
+              model.quantity %>"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="item_image" class="form-label">Image :</label>
+          <input type="file" class="form-control" id="item_image" name="img" />
+        </div>
 
+        <button type="submit" class="btn btn-primary">Update Product</button>
+      </form>
 
-
-            <button type="submit"
-              class="btn btn-primary">
-              Update Product
-            </button>
-        </form>
-  
-        <% } %>
-      </div>
+      <% } %>
     </div>
   </div>
-  
+</div>

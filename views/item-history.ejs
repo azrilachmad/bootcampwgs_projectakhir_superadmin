@@ -1,0 +1,73 @@
+<div class="container">
+    <div class="row">
+      <div class="col-md-8">
+        <h2>Product History :</h2>
+  
+        <% if (messages.success) { %>
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong><%= messages.success %>
+            </strong>
+            <button type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <% } %> 
+  
+  
+        <% if (messages.error) { %>
+        <div class="alert alert-danger" role="alert">
+          <ul>
+            <li><%= messages.error %></li>
+            </ul>
+            </div>
+            <% } %>
+  
+  
+        <% if (model.length < 1 || model.length === null || model.length === undefined) { %>
+          <div class="alert alert-danger fw-bold" role="alert">
+            Product History not found 
+          </div>
+  
+          
+          <% } else {%>
+        <table class="table table-hover">
+          <thead>
+            <tr class="table table-primary">
+              <th scope="col">No.</th>
+              <th scope="col">Date</th>
+              <th scope="col">Detail</th>
+              <th scope="col">Product Name</th>
+              <th scope="col">Category</th>
+              <th scope="col">quantity</th>
+            </tr>
+          </thead>
+          <tbody>
+              <% let i = 1 %> 
+  
+              <% function capitalizeTheFirstLetterOfEachWord(words) {%> 
+                <% var separateWord = words.toLowerCase().split(' '); %>
+                  <% for (var i = 0; i < separateWord.length; i++) { %>
+                    <%separateWord[i] = separateWord[i].charAt(0).toUpperCase() + separateWord[i].substring(1);%>
+                  <% } %> 
+                <%  return separateWord.join(' ');%> 
+              <% } %>  
+  
+  
+              <% for( const items of model) { %>
+                  <tr class="table table-secondary">
+                      <th scope="row"><%= i %> </th>
+                      <% i++ %> 
+                      <td><%= moment(items.date).format(`DD/MM/YYYY`) %> </td>
+                      <td><%= items.details%> </td>
+                      <td><%= capitalizeTheFirstLetterOfEachWord(items.product_name) %> </td>
+                      <td><%= items.category%> </td>
+                      <td><%= items.quantity %> </td>
+                  </tr>
+                  <% } %>
+          </tbody>
+      </table>
+      <% } %> 
+      </div>
+    </div>
+  </div>
+  

@@ -11,7 +11,7 @@ function initialize(passport) {
         if (err) {
           throw err;
         }
-        console.log(results.rows);
+        console.log(results.rows[0]);
 
         if (results.rows.length > 0) {
           const user = results.rows[0];
@@ -21,6 +21,7 @@ function initialize(passport) {
               throw err;
             }
             if (isMatch) {
+              pool.query(`INSERT INTO public.log_app(id_user, username, activity) VALUES (${user.id}, '${user.username}' ,'login')`);
               return done(null, user, { message: `Success Login as ${user.username}`});
             } else {
               return done(null, false, { message: "Password is incorrect" });
